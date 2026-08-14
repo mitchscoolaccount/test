@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <h1>Login</h1>
+
+    <form id="form">
+      <input id="email" type="email" placeholder="email" autocomplete="email" required />
+      <input
+        id="password"
+        type="password"
+        placeholder="password (min 6 chars)"
+        autocomplete="current-password"
+        minlength="6"
+        required
+      />
+      <div class="row">
+        <button id="signin" type="submit">Sign in</button>
+        <button id="signup" type="button">Sign up</button>
+      </div>
+    </form>
+
+    <p class="msg" id="msg"></p>
+
+    <script src="/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script>
+      const db = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+      const msg = document.getElementById("msg");
+      const email = document.getElementById("email");
+      const password = document.getElementById("password");
+
+      // Already signed in? Go straight to the list.
+      db.auth.getSession().then(({ data }) => {
+        if (data.session) location.replace("/users.html");
+      });
+
+      document.getElementById("form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        msg.textContent = "signing in...";
+        const { error } = await db.auth.signInWithPassword({
+          email: email.value,
+          password: password.value,
+        });
+        if (error) {
+          msg.textContent = error.message;
+          return;
+        }
+        location.replace("/users.html");
+      });
+
+      document.getElementById("signup").addEventListener("click", async () => {
+        if (!email.value || password.value.length < 6) {
+          msg.textContent = "enter an email and a password of at least 6 characters";
+          return;
+        }
+        msg.textContent = "creating account...";
+        const { data, error } = await db.auth.signUp({
+          email: email.value,
+          password: password.value,
+        });
+        if (error) {
+          msg.textContent = error.message;
+          return;
+        }
+        if (data.session) {
+          location.replace("/users.html");
+        } else {
+          msg.textContent = "account created - check your email to confirm, then sign in.";
+        }
+      });
+    </script>
+  </body>
+</html>

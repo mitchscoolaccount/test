@@ -1,0 +1,60 @@
+body {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  max-width: 640px;
+  margin: 40px auto;
+  padding: 0 16px;
+  line-height: 1.5;
+}
+
+h1 {
+  font-size: 20px;
+}
+
+input,
+button {
+  font: inherit;
+  padding: 6px 8px;
+  margin: 4px 0;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+button {
+  cursor: pointer;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 12px;
+}
+
+th,
+td {
+  border: 1px solid #ccc;
+  padding: 6px 8px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.msg {
+  min-height: 20px;
+  color: #b00;
+  font-size: 14px;
+}
+
+.online {
+  color: #0a0;
+  font-weight: bold;
+}
+
+.offline {
+  color: #888;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Users</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <h1>Users</h1>
+    <p id="me"></p>
+    <button id="signout" style="width: auto">Sign out</button>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Last seen</th>
+          <th>Signed up</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+
+    <p class="msg" id="msg"></p>
+
+    <script src="/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script>
+      const db = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+      const rows = document.getElementById("rows");
+      const msg = document.getElementById("msg");
+      const ONLINE_WINDOW_MS = 2 * 60 * 1000;
+
+      let me = null;
+
+      function fmt(ts) {
+        return ts ? new Date(ts).toLocaleString() : "-";
+      }
+
+      function cell(row, text, className) {
+        const td = document.createElement("td");
+        td.textContent = text;
+        if (className) td.className = className;
+        row.appendChild(td);
+      }
+
+      async function heartbeat() {
+        await db.from("users").update({ last_seen: new Date().toISOString() }).eq("id", me.id);
+      }
+
+      async function load() {
+        const { data, error } = await db
+          .from("users")
+          .select("id,email,created_at,last_seen")
+          .order("last_seen", { ascending: false });
+
+        if (error) {
+          msg.textContent = error.message;
+          return;
+        }
+
+        msg.textContent = "";
+        rows.replaceChildren();
+        const now = Date.now();
+        for (const u of data) {
+          const online = now - new Date(u.last_seen).getTime() < ONLINE_WINDOW_MS;
+          const tr = document.createElement("tr");
+          cell(tr, u.email + (u.id === me.id ? " (you)" : ""));
+          cell(tr, online ? "logged in" : "away", online ? "online" : "offline");
+          cell(tr, fmt(u.last_seen));
+          cell(tr, fmt(u.created_at));
+          rows.appendChild(tr);
+        }
+      }
+
+      document.getElementById("signout").addEventListener("click", async () => {
+        await db.auth.signOut();
+        location.replace("/");
+      });
+
+      (async () => {
+        const { data } = await db.auth.getSession();
+        if (!data.session) {
+          location.replace("/");
+          return;
+        }
+        me = data.session.user;
+        document.getElementById("me").textContent = "Signed in as " + me.email;
+
+        await heartbeat();
+        await load();
+        setInterval(async () => {
+          await heartbeat();
+          await load();
+        }, 15000);
+      })();
+    </script>
+  </body>
+</html>
